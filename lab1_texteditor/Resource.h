@@ -16,6 +16,17 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1
 #endif
+
+#define IDM_NEW         1001
+#define IDM_OPEN        1002
+#define IDM_SAVE        1003
+#define IDM_EXIT        1004
+#define IDM_COPY        1005
+#define IDM_PASTE       1006
+#define IDM_CUT         1007
+#define IDM_SELECTALL   1008
+#define IDM_ABOUT       1009
+
 // Следующие стандартные значения для новых объектов
 //
 #ifdef APSTUDIO_INVOKED
@@ -28,3 +39,4 @@
 #define _APS_NEXT_SYMED_VALUE		110
 #endif
 #endif
+

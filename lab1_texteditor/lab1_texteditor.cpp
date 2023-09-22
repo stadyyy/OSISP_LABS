@@ -1,6 +1,8 @@
 ﻿#include "framework.h"
 #include "lab1_texteditor.h"
 #include "resource.h"
+#include <windows.h>
+#include <commdlg.h>
 
 #define MAX_LOADSTRING 100
 
@@ -13,19 +15,6 @@ BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void CreateMainMenu(HWND hWnd);
 HWND hEdit;
-
-INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-        // Другие обработчики сообщений для вашего диалогового окна
-    }
-
-    return (INT_PTR)FALSE;
-}
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -135,33 +124,107 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);
-        // Разобрать выбор в меню:
         switch (wmId)
         {
         case IDM_NEW:
-            // Обработка команды "New"
+            SetWindowText(hEdit, L"");
             break;
         case IDM_OPEN:
-            // Обработка команды "Open"
-            break;
+        {
+            OPENFILENAME ofn;
+            wchar_t szFileName[MAX_PATH] = L"";
+
+            ZeroMemory(&ofn, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = hWnd;
+            ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+            ofn.lpstrFile = szFileName;
+            ofn.nMaxFile = sizeof(szFileName);
+            ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+
+            if (GetOpenFileName(&ofn))
+            {
+                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile != INVALID_HANDLE_VALUE)
+                {
+                    DWORD dwFileSize = GetFileSize(hFile, NULL);
+                    if (dwFileSize != INVALID_FILE_SIZE)
+                    {
+                        wchar_t* szFileContent = new wchar_t[dwFileSize + 1];
+                        if (szFileContent != nullptr)
+                        {
+                            DWORD dwRead;
+                            if (ReadFile(hFile, szFileContent, dwFileSize, &dwRead, NULL))
+                            {
+                                szFileContent[dwFileSize] = L'\0';
+                                SetWindowText(hEdit, szFileContent);
+                            }
+                            delete[] szFileContent;
+                        }
+                    }
+                    CloseHandle(hFile);
+                }
+            }
+        }
+        break;
         case IDM_SAVE:
-            // Обработка команды "Save"
-            break;
-        case IDM_EXIT:
-            // Обработка команды "Exit"
-            DestroyWindow(hWnd);
-            break;
+        case IDM_SAVEAS:
+        {
+            wchar_t szFileName[MAX_PATH];
+            GetWindowText(hEdit, szFileName, MAX_PATH);
+
+            if (lstrlen(szFileName) == 0 || wmId == IDM_SAVEAS)
+            {
+                OPENFILENAME ofn;
+                ZeroMemory(&ofn, sizeof(ofn));
+                ofn.lStructSize = sizeof(ofn);
+                ofn.hwndOwner = hWnd;
+                ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+                ofn.lpstrFile = szFileName;
+                ofn.nMaxFile = MAX_PATH;
+                ofn.Flags = OFN_OVERWRITEPROMPT;
+
+                if (GetSaveFileName(&ofn))
+                {
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (lstrlen(szFileName) == 0)
+            {
+                MessageBox(hWnd, L"Файл не выбран для сохранения.", L"Предупреждение", MB_OK | MB_ICONWARNING);
+                return 0;
+            }
+
+            HANDLE hFile = CreateFile(szFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+            if (hFile != INVALID_HANDLE_VALUE)
+            {
+                wchar_t* szText = new wchar_t[GetWindowTextLength(hEdit) + 1];
+                if (szText != nullptr)
+                {
+                    GetWindowText(hEdit, szText, GetWindowTextLength(hEdit) + 1);
+                    DWORD dwBytesWritten;
+                    WriteFile(hFile, szText, lstrlen(szText) * sizeof(wchar_t), &dwBytesWritten, NULL);
+                    delete[] szText;
+                }
+                CloseHandle(hFile);
+            }
+        }
+        break;
         case IDM_COPY:
-            // Обработка команды "Copy"
+            SendMessage(hEdit, WM_COPY, 0, 0);
             break;
         case IDM_PASTE:
-            // Обработка команды "Paste"
+            SendMessage(hEdit, WM_PASTE, 0, 0);
             break;
         case IDM_CUT:
-            // Обработка команды "Cut"
+            SendMessage(hEdit, WM_CUT, 0, 0);
             break;
         case IDM_SELECTALL:
-            // Обработка команды "Select All"
+            SendMessage(hEdit, EM_SETSEL, 0, -1);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -186,6 +249,7 @@ void CreateMainMenu(HWND hWnd)
     AppendMenu(hFileMenu, MF_STRING, IDM_NEW, L"New");
     AppendMenu(hFileMenu, MF_STRING, IDM_OPEN, L"Open");
     AppendMenu(hFileMenu, MF_STRING, IDM_SAVE, L"Save");
+    AppendMenu(hFileMenu, MF_STRING, IDM_SAVEAS, L"Save As");
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, nullptr);
     AppendMenu(hFileMenu, MF_STRING, IDM_EXIT, L"Exit");
     AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFileMenu, L"File");

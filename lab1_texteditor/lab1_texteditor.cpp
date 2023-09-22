@@ -140,23 +140,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
             ofn.lpstrFile = szFileName;
             ofn.nMaxFile = sizeof(szFileName);
-            ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+            ofn.Flags = OFN_FILEMUSTEXIST;
 
             if (GetOpenFileName(&ofn))
             {
-                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
                 if (hFile != INVALID_HANDLE_VALUE)
                 {
                     DWORD dwFileSize = GetFileSize(hFile, NULL);
                     if (dwFileSize != INVALID_FILE_SIZE)
                     {
-                        wchar_t* szFileContent = new wchar_t[dwFileSize + 1];
-                        if (szFileContent != nullptr)
+                        wchar_t* szFileContent = new wchar_t[dwFileSize / sizeof(wchar_t) + 1];
+                        if (szFileContent)
                         {
-                            DWORD dwRead;
-                            if (ReadFile(hFile, szFileContent, dwFileSize, &dwRead, NULL))
+                            DWORD dwBytesRead;
+                            if (ReadFile(hFile, szFileContent, dwFileSize, &dwBytesRead, NULL))
                             {
-                                szFileContent[dwFileSize] = L'\0';
+                                szFileContent[dwFileSize / sizeof(wchar_t)] = L'\0';
                                 SetWindowText(hEdit, szFileContent);
                             }
                             delete[] szFileContent;
@@ -168,49 +168,60 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
         case IDM_SAVE:
-        case IDM_SAVEAS:
         {
-            wchar_t szFileName[MAX_PATH];
-            GetWindowText(hEdit, szFileName, MAX_PATH);
+            OPENFILENAME ofn;
+            wchar_t szFileName[MAX_PATH] = L"";
 
-            if (lstrlen(szFileName) == 0 || wmId == IDM_SAVEAS)
+            ZeroMemory(&ofn, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = hWnd;
+            ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+            ofn.lpstrFile = szFileName;
+            ofn.nMaxFile = sizeof(szFileName);
+            ofn.Flags = OFN_OVERWRITEPROMPT;
+
+            if (GetSaveFileName(&ofn))
             {
-                OPENFILENAME ofn;
-                ZeroMemory(&ofn, sizeof(ofn));
-                ofn.lStructSize = sizeof(ofn);
-                ofn.hwndOwner = hWnd;
-                ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
-                ofn.lpstrFile = szFileName;
-                ofn.nMaxFile = MAX_PATH;
-                ofn.Flags = OFN_OVERWRITEPROMPT;
-
-                if (GetSaveFileName(&ofn))
+                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile != INVALID_HANDLE_VALUE)
                 {
-                }
-                else
-                {
-                    break;
-                }
-            }
+                    wchar_t szText[4096];
+                    GetWindowText(hEdit, szText, sizeof(szText) / sizeof(szText[0]));
 
-            if (lstrlen(szFileName) == 0)
-            {
-                MessageBox(hWnd, L"Файл не выбран для сохранения.", L"Предупреждение", MB_OK | MB_ICONWARNING);
-                return 0;
-            }
-
-            HANDLE hFile = CreateFile(szFileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-            if (hFile != INVALID_HANDLE_VALUE)
-            {
-                wchar_t* szText = new wchar_t[GetWindowTextLength(hEdit) + 1];
-                if (szText != nullptr)
-                {
-                    GetWindowText(hEdit, szText, GetWindowTextLength(hEdit) + 1);
                     DWORD dwBytesWritten;
                     WriteFile(hFile, szText, lstrlen(szText) * sizeof(wchar_t), &dwBytesWritten, NULL);
-                    delete[] szText;
+
+                    CloseHandle(hFile);
                 }
-                CloseHandle(hFile);
+            }
+        }
+        break;
+        case IDM_SAVEAS:
+        {
+            OPENFILENAME ofn;
+            wchar_t szFileName[MAX_PATH] = L"";
+
+            ZeroMemory(&ofn, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = hWnd;
+            ofn.lpstrFilter = L"Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";
+            ofn.lpstrFile = szFileName;
+            ofn.nMaxFile = sizeof(szFileName);
+            ofn.Flags = OFN_OVERWRITEPROMPT;
+
+            if (GetSaveFileName(&ofn))
+            {
+                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile != INVALID_HANDLE_VALUE)
+                {
+                    wchar_t szText[4096];
+                    GetWindowText(hEdit, szText, sizeof(szText) / sizeof(szText[0]));
+
+                    DWORD dwBytesWritten;
+                    WriteFile(hFile, szText, lstrlen(szText) * sizeof(wchar_t), &dwBytesWritten, NULL);
+
+                    CloseHandle(hFile);
+                }
             }
         }
         break;

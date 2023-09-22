@@ -1,5 +1,6 @@
 ﻿#include "framework.h"
 #include "lab1_texteditor.h"
+#include "resource.h"
 
 #define MAX_LOADSTRING 100
 
@@ -11,6 +12,21 @@ ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void CreateMainMenu(HWND hWnd);
+HWND hEdit;
+
+INT_PTR CALLBACK MainDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message)
+    {
+    case WM_INITDIALOG:
+        return (INT_PTR)TRUE;
+
+        // Другие обработчики сообщений для вашего диалогового окна
+    }
+
+    return (INT_PTR)FALSE;
+}
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -84,8 +100,38 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    static HWND hEdit;
     switch (message)
     {
+    case WM_CREATE:
+    {
+        hEdit = CreateWindowEx(
+            WS_EX_CLIENTEDGE,
+            L"EDIT",
+            NULL,
+            WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+            0, 0, 0, 0,
+            hWnd,
+            (HMENU)IDC_TEXT_EDIT, 
+            hInst,
+            NULL);
+
+        if (hEdit == NULL)
+        {
+            MessageBox(NULL, L"Cannot create edit control.", L"Error", MB_OK | MB_ICONERROR);
+            return -1;
+        }
+    }
+    break;
+
+    case WM_SIZE:
+    {
+        int newWidth = LOWORD(lParam);
+        int newHeight = HIWORD(lParam);
+
+        SetWindowPos(hEdit, NULL, 0, 0, newWidth, newHeight, SWP_NOZORDER);
+    }
+    break;
     case WM_COMMAND:
     {
         int wmId = LOWORD(wParam);

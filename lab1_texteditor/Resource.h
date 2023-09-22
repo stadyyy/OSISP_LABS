@@ -26,6 +26,8 @@
 #define IDM_CUT         1007
 #define IDM_SELECTALL   1008
 #define IDM_ABOUT       1009
+#define IDC_TEXT_EDIT 1010
+#define IDD_MAIN_DIALOG 101
 
 // Следующие стандартные значения для новых объектов
 //

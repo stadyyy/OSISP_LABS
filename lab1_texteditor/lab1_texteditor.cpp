@@ -84,6 +84,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     // Создаем меню
     CreateMainMenu(hWnd);
 
+    RegisterHotKey(hWnd, HOTKEY_CTRL_S, MOD_CONTROL, 'S');
+    RegisterHotKey(hWnd, HOTKEY_CTRL_O, MOD_CONTROL, 'O');
+    RegisterHotKey(hWnd, HOTKEY_CTRL_SHIFT_S, MOD_CONTROL | MOD_SHIFT, 'S');
+
     return TRUE;
 }
 
@@ -92,6 +96,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     static HWND hEdit;
     switch (message)
     {
+    case WM_HOTKEY:
+    {
+        int id = wParam;
+        switch (id)
+        {
+        case HOTKEY_CTRL_O:
+            SendMessage(hWnd, WM_COMMAND, IDM_OPEN, 0);
+            break;
+        case HOTKEY_CTRL_S:
+            SendMessage(hWnd, WM_COMMAND, IDM_SAVE, 0);
+            break;
+        case HOTKEY_CTRL_SHIFT_S:
+            SendMessage(hWnd, WM_COMMAND, IDM_SAVEAS, 0);
+            break;
+        }
+    }
+    break;
     case WM_CREATE:
     {
         hEdit = CreateWindowEx(
@@ -119,6 +140,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         int newHeight = HIWORD(lParam);
 
         SetWindowPos(hEdit, NULL, 0, 0, newWidth, newHeight, SWP_NOZORDER);
+    }
+    break;
+    case WM_CLOSE:
+    {
+        // Проверяем, были ли внесены изменения
+        wchar_t szEditText[4096];
+        GetWindowText(hEdit, szEditText, sizeof(szEditText) / sizeof(szEditText[0]));
+
+        if (IsWindowVisible(hEdit) && wcscmp(szEditText, L"") != 0)
+        {
+            int result = MessageBox(hWnd, L"Do you want to save the changes?", L"Save Changes", MB_YESNOCANCEL | MB_ICONQUESTION);
+
+            if (result == IDYES)
+            {
+                // Сохраняем изменения
+                SendMessage(hWnd, WM_COMMAND, IDM_SAVE, 0);
+            }
+            else if (result == IDCANCEL)
+            {
+                // Отмена закрытия окна
+                return 0;
+            }
+        }
+
+        UnregisterHotKey(hWnd, HOTKEY_CTRL_O);
+        UnregisterHotKey(hWnd, HOTKEY_CTRL_S);
+        UnregisterHotKey(hWnd, HOTKEY_CTRL_SHIFT_S);
+        // Завершаем приложение
+        DestroyWindow(hWnd);
     }
     break;
     case WM_COMMAND:
@@ -237,6 +287,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         case IDM_SELECTALL:
             SendMessage(hEdit, EM_SETSEL, 0, -1);
             break;
+
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
         }

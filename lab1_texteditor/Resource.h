@@ -17,6 +17,9 @@
 #define IDC_STATIC				-1
 #endif
 
+#define HOTKEY_CTRL_S 900
+#define HOTKEY_CTRL_O 901
+#define HOTKEY_CTRL_SHIFT_S 902
 #define IDM_NEW         1001
 #define IDM_OPEN        1002
 #define IDM_SAVE        1003

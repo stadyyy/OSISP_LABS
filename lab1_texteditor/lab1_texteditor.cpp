@@ -144,7 +144,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     break;
     case WM_CLOSE:
     {
-        // Проверяем, были ли внесены изменения
         wchar_t szEditText[4096];
         GetWindowText(hEdit, szEditText, sizeof(szEditText) / sizeof(szEditText[0]));
 
@@ -154,12 +153,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             if (result == IDYES)
             {
-                // Сохраняем изменения
                 SendMessage(hWnd, WM_COMMAND, IDM_SAVE, 0);
             }
             else if (result == IDCANCEL)
             {
-                // Отмена закрытия окна
                 return 0;
             }
         }
@@ -167,7 +164,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         UnregisterHotKey(hWnd, HOTKEY_CTRL_O);
         UnregisterHotKey(hWnd, HOTKEY_CTRL_S);
         UnregisterHotKey(hWnd, HOTKEY_CTRL_SHIFT_S);
-        // Завершаем приложение
         DestroyWindow(hWnd);
     }
     break;

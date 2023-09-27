@@ -35,28 +35,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     MSG msg;
-
+     
     while (GetMessage(&msg, nullptr, 0, 0))
     {
         TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        DispatchMessage(&msg); // Отправка сообщения на обработку функции окна (WndProc)
     }
 
     return (int)msg.wParam;
 }
 
-ATOM MyRegisterClass(HINSTANCE hInstance)
+ATOM MyRegisterClass(HINSTANCE hInstance) //регистрация класса окна с системой
 {
     WNDCLASSEXW wcex;
 
     wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc = WndProc;
-    wcex.cbClsExtra = 0;
+    wcex.style = CS_HREDRAW | CS_VREDRAW; //обеспечивает перерисовку содержимого окна при изменении его размера
+    wcex.lpfnWndProc = WndProc; //обработчик
+    wcex.cbClsExtra = 0; //выделения дополнительной памяти для класса = 0
     wcex.cbWndExtra = 0;
-    wcex.hInstance = hInstance;
-    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LAB1TEXTEDITOR));
+    wcex.hInstance = hInstance; //Указывает на текущий экземпляр приложения
+    wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LAB1TEXTEDITOR)); //иконка
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wcex.lpszMenuName = nullptr;
@@ -66,9 +66,9 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     return RegisterClassExW(&wcex);
 }
 
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) //создание главного окна
 {
-    hInst = hInstance;
+    hInst = hInstance; //сохранение дескриптора
 
     HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
@@ -81,7 +81,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
-    // Создаем меню
+    // Создание меню
     CreateMainMenu(hWnd);
 
     RegisterHotKey(hWnd, HOTKEY_CTRL_S, MOD_CONTROL, 'S');
@@ -91,9 +91,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) //функция обратного вызова, которая обрабатывает сообщения для вашего главного окна
 {
-    static HWND hEdit;
+    static HWND hEdit; // Статическая переменная для хранения дескриптора элемента управления EDIT
     switch (message)
     {
     case WM_HOTKEY:
